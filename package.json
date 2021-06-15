@@ -14,9 +14,6 @@
     "dist",
     "src"
   ],
-  "dependencies": {
-    "react": "^17.0.1"
-  },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
@@ -37,6 +34,7 @@
     "eslint-plugin-react-hooks": "^4.2.0",
     "husky": "^4.3.0",
     "prettier": "^2.2.1",
+    "react": "^17.0.1",
     "react-scripts": "4.0.1",
     "react-test-renderer": "^17.0.1",
     "tsdx": "^0.14.1",
