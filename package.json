@@ -1,6 +1,7 @@
 {
-  "name": "react-conditional",
-  "version": "0.0.0",
+  "name": "@keislamoglu/react-conditional",
+  "version": "0.1.1",
+  "description": "Reduce the complexity of conditional rendering.",
   "author": {
     "name": "Kadir Emin İslamoğlu",
     "email": "kadiremin@gmail.com"
