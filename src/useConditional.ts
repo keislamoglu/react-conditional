@@ -3,11 +3,11 @@ import { useCallback, useEffect, useState } from 'react'
 export type ICondition<ActionType> =
   | {
       done: ActionType[]
-      notDone?: ActionType[]
+      undone?: ActionType[]
     }
   | {
       done?: ActionType[]
-      notDone: ActionType[]
+      undone: ActionType[]
     }
   | null
 export type TeardownType = () => void
@@ -107,7 +107,7 @@ export const useConditional = <ActionType>(): [
         when === null ||
         [
           when.done ? isActionsDone(when.done) : true,
-          when.notDone ? !when.notDone.some((action) => isActionsDone([action])) : true,
+          when.undone ? !when.undone.some((action) => isActionsDone([action])) : true,
         ].every(Boolean)
       )
     },
