@@ -1,6 +1,6 @@
 {
   "name": "@keislamoglu/react-conditional",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Reduce the complexity of conditional rendering.",
   "author": "Kadir Emin İslamoğlu <kadiremin@gmail.com>",
   "license": "MIT",
