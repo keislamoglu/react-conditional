@@ -2,14 +2,11 @@
   "name": "@keislamoglu/react-conditional",
   "version": "0.1.1",
   "description": "Reduce the complexity of conditional rendering.",
-  "author": {
-    "name": "Kadir Emin İslamoğlu",
-    "email": "kadiremin@gmail.com"
-  },
+  "author": "Kadir Emin İslamoğlu <kadiremin@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/keislamoglu/react-conditional"
+    "url": "git+https://github.com/keislamoglu/react-conditional.git"
   },
   "main": "dist/index.js",
   "files": [
@@ -84,6 +81,9 @@
     "conditional",
     "conditional rendering",
     "npm"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/keislamoglu/react-conditional/issues"
+  },
+  "homepage": "https://github.com/keislamoglu/react-conditional#readme"
 }
-
