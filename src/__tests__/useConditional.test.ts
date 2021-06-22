@@ -61,20 +61,49 @@ describe('useConditional', () => {
     expect(mockTeardownCallback).toHaveBeenCalledTimes(1)
   })
 
+  it('should update the existing condition when it is redefined (named)', () => {
+    const mockCallback1 = jest.fn()
+    const mockCallback2 = jest.fn()
+
+    act(() => {
+      defineConditional({
+        name: 'Test',
+        when: { done: [Action.Action2] },
+        perform: mockCallback1,
+      })
+    })
+    act(() => {
+      defineConditional({
+        name: 'Test',
+        when: { done: [Action.Action1] },
+        perform: mockCallback2,
+      })
+    })
+
+    act(() => {
+      conditionalApi.doAction(Action.Action1)
+      conditionalApi.doAction(Action.Action2)
+    })
+
+    expect(mockCallback1).not.toHaveBeenCalled()
+    expect(mockCallback2).toHaveBeenCalledTimes(1)
+  })
+
   it('should update the existing condition when it is redefined', () => {
     const mockCallback1 = jest.fn()
     const mockCallback2 = jest.fn()
-    const condition: ICondition<Action> = {
-      done: [Action.Action1],
-    }
 
-    defineConditional({
-      when: condition,
-      perform: mockCallback1,
+    act(() => {
+      defineConditional({
+        when: { done: [Action.Action1] },
+        perform: mockCallback1,
+      })
     })
-    defineConditional({
-      when: condition,
-      perform: mockCallback2,
+    act(() => {
+      defineConditional({
+        when: { done: [Action.Action1] },
+        perform: mockCallback2,
+      })
     })
 
     act(() => {

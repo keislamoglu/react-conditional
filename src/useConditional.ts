@@ -111,44 +111,59 @@ export const useConditional = <ActionType>(): [
 
   const updateCondition = useCallback(
     (name: string, when: ConditionType) => {
-      const conditional = conditionals.find(({ name: _name }) => name === _name)
-      if (conditional) conditional.when = when
-      detectChanges()
+      setConditionals((conditionals) => {
+        const conditional = conditionals.find(({ name: _name }) => name === _name)
+
+        if (conditional) {
+          const hasNullDifference = [conditional.when, when].includes(null) && conditional.when !== when
+          const hasNonNullDifference =
+            conditional.when != null && when != null && !compareConditions(conditional.when, when)
+
+          if (hasNullDifference || hasNonNullDifference) {
+            conditional.when = when
+            detectChanges()
+          }
+        }
+
+        return conditionals
+      })
     },
-    [conditionals, detectChanges]
+    [compareConditions, detectChanges]
   )
 
   const defineConditional = useCallback(
     (conditional: ConditionalType) => {
-      const _conditionals = conditionals
-      let existingConditional: ConditionalWithTeardownType | undefined
+      setConditionals((conditionals) => {
+        let existingConditional: ConditionalWithTeardownType | undefined
 
-      if (conditional.name) {
-        existingConditional = _conditionals.find(({ name }) => conditional.name === name)
-        existingConditional != null && updateCondition(conditional.name, conditional.when)
-      }
+        if (conditional.name) {
+          existingConditional = conditionals.find(({ name }) => conditional.name === name)
+          existingConditional != null && updateCondition(conditional.name, conditional.when)
+        }
 
-      if (!existingConditional && conditional.when != null) {
-        existingConditional = _conditionals.find(
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ({ name, when }) => !name && when != null && compareConditions(when, conditional.when!)
-        )
-      }
+        if (!existingConditional && conditional.when != null) {
+          existingConditional = conditionals.find(
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            ({ name, when }) => !name && when != null && compareConditions(when, conditional.when!)
+          )
+        }
 
-      if (existingConditional) {
-        existingConditional.perform = conditional.perform
-        existingConditional.performed = false
-      } else {
-        _conditionals.push({
-          ...conditional,
-          performed: false,
-        })
-      }
+        if (existingConditional) {
+          existingConditional.perform = conditional.perform
+          existingConditional.performed = false
+        } else {
+          conditionals.push({
+            ...conditional,
+            performed: false,
+          })
+        }
 
-      setConditionals(_conditionals)
-      detectChanges()
+        detectChanges()
+
+        return conditionals
+      })
     },
-    [detectChanges, compareConditions, conditionals, updateCondition]
+    [detectChanges, compareConditions, updateCondition]
   )
 
   useEffect(() => {
