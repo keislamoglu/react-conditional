@@ -26,7 +26,10 @@ export const useConditional = <ActionType>(): [
         (Array.isArray(cond2[prop]) && cond1[prop] == null)
       )
 
-      return isConditionsConsistent && compareArrays(cond1[prop] as ActionType[], cond2[prop] as ActionType[])
+      return (
+        isConditionsConsistent &&
+        (cond1[prop] == null || compareArrays(cond1[prop] as ActionType[], cond2[prop] as ActionType[]))
+      )
     })
   }, [])
 
