@@ -1,32 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-
-export type ICondition<ActionType> =
-  | {
-      done: ActionType[]
-      undone?: ActionType[]
-    }
-  | {
-      done?: ActionType[]
-      undone: ActionType[]
-    }
-  | null
-export type TeardownType = () => void
-
-export interface IConditional<ActionType> {
-  name?: string
-  when: ICondition<ActionType>
-  perform: () => TeardownType | void
-}
-
-export interface ConditionalApi<ActionType> {
-  doAction: (action: ActionType) => void
-  undoAction: (action: ActionType) => void
-  setActions: (actions: ActionType[]) => void
-  clearActions: () => void
-  isActionsDone: (actions: ActionType[]) => boolean
-  checkCondition: (when: ICondition<ActionType>) => boolean
-  updateCondition: (name: string, when: ICondition<ActionType>) => void
-}
+import { ConditionalApi, ICondition, IConditional, TeardownType } from './types'
+import { compareArrays } from './utils'
 
 export const useConditional = <ActionType>(): [
   (conditional: IConditional<ActionType>) => void,
@@ -43,42 +17,58 @@ export const useConditional = <ActionType>(): [
   const [performedActions, setPerformedActions] = useState<Set<ActionType>>(new Set())
   const [conditionals, setConditionals] = useState<ConditionalWithTeardownType[]>([])
 
-  const updateActionSet = useCallback(
-    (callback: (set: Set<ActionType>) => void) => {
-      const set = new Set(performedActions)
-      callback(set)
-      setPerformedActions(set)
-    },
-    [performedActions]
-  )
+  const compareConditions = useCallback((cond1: Exclude<ConditionType, null>, cond2: Exclude<ConditionType, null>) => {
+    const props: Array<keyof typeof cond1> = ['done', 'undone']
+
+    return props.every((prop) => {
+      const isConditionsConsistent = !(
+        (Array.isArray(cond1[prop]) && cond2[prop] == null) ||
+        (Array.isArray(cond2[prop]) && cond1[prop] == null)
+      )
+
+      return isConditionsConsistent && compareArrays(cond1[prop] as ActionType[], cond2[prop] as ActionType[])
+    })
+  }, [])
+
+  const updateActionSet = useCallback((setterCallback: (set: Set<ActionType>) => Set<ActionType>) => {
+    setPerformedActions((prevPerformedActions: Set<ActionType>) => setterCallback(new Set(prevPerformedActions)))
+  }, [])
 
   const doAction: ApiType['doAction'] = useCallback(
     (action: ActionType) => {
-      updateActionSet((set) => set.add(action))
+      updateActionSet((actionSet) => {
+        actionSet.add(action)
+        return actionSet
+      })
     },
     [updateActionSet]
   )
 
   const undoAction: ApiType['undoAction'] = useCallback(
     (action: ActionType) => {
-      updateActionSet((set) => set.delete(action))
+      updateActionSet((actionSet) => {
+        actionSet.delete(action)
+        return actionSet
+      })
     },
     [updateActionSet]
   )
 
   const setActions: ApiType['setActions'] = useCallback(
     (actions: ActionType[]) => {
-      updateActionSet((set) => {
-        set.clear()
-        actions.forEach((action) => set.add(action))
+      updateActionSet((actionSet) => {
+        actionSet.clear()
+        actions.forEach((action) => actionSet.add(action))
+        return actionSet
       })
     },
     [updateActionSet]
   )
 
   const clearActions: ApiType['clearActions'] = useCallback(() => {
-    updateActionSet((set) => {
-      set.clear()
+    updateActionSet((actionSet) => {
+      actionSet.clear()
+      return actionSet
     })
   }, [updateActionSet])
 
@@ -87,18 +77,6 @@ export const useConditional = <ActionType>(): [
       return actions.every((action) => performedActions.has(action))
     },
     [performedActions]
-  )
-
-  const defineConditional = useCallback(
-    (conditional: ConditionalType) => {
-      const _conditionals = conditionals
-      _conditionals.push({
-        ...conditional,
-        performed: false,
-      })
-      setConditionals(_conditionals)
-    },
-    [conditionals]
   )
 
   const checkCondition = useCallback(
@@ -135,6 +113,39 @@ export const useConditional = <ActionType>(): [
       detectChanges()
     },
     [conditionals, detectChanges]
+  )
+
+  const defineConditional = useCallback(
+    (conditional: ConditionalType) => {
+      const _conditionals = conditionals
+      let existingConditional: ConditionalWithTeardownType | undefined
+
+      if (conditional.name) {
+        existingConditional = _conditionals.find(({ name }) => conditional.name === name)
+        existingConditional != null && updateCondition(conditional.name, conditional.when)
+      }
+
+      if (!existingConditional && conditional.when != null) {
+        existingConditional = _conditionals.find(
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ({ name, when }) => !name && when != null && compareConditions(when, conditional.when!)
+        )
+      }
+
+      if (existingConditional) {
+        existingConditional.perform = conditional.perform
+        existingConditional.performed = false
+      } else {
+        _conditionals.push({
+          ...conditional,
+          performed: false,
+        })
+      }
+
+      setConditionals(_conditionals)
+      detectChanges()
+    },
+    [detectChanges, compareConditions, conditionals, updateCondition]
   )
 
   useEffect(() => {
