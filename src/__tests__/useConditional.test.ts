@@ -71,16 +71,11 @@ describe('useConditional', () => {
         when: { done: [Action.Action2] },
         perform: mockCallback1,
       })
-    })
-    act(() => {
       defineConditional({
         name: 'Test',
         when: { done: [Action.Action1] },
         perform: mockCallback2,
       })
-    })
-
-    act(() => {
       conditionalApi.doAction(Action.Action1)
       conditionalApi.doAction(Action.Action2)
     })
@@ -98,21 +93,30 @@ describe('useConditional', () => {
         when: { done: [Action.Action1] },
         perform: mockCallback1,
       })
-    })
-    act(() => {
       defineConditional({
         when: { done: [Action.Action1] },
         perform: mockCallback2,
       })
-    })
-
-    act(() => {
       conditionalApi.doAction(Action.Action1)
       conditionalApi.doAction(Action.Action2)
     })
 
     expect(mockCallback1).not.toHaveBeenCalled()
     expect(mockCallback2).toHaveBeenCalledTimes(1)
+  })
+
+  it('should detect changes when a new conditional is defined', () => {
+    const mockCallback = jest.fn()
+
+    act(() => {
+      conditionalApi.doAction(Action.Action1)
+      defineConditional({
+        when: { done: [Action.Action1] },
+        perform: mockCallback,
+      })
+    })
+
+    expect(mockCallback).toHaveBeenCalledTimes(1)
   })
 
   test('setActions', () => {
