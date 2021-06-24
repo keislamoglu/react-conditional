@@ -1,6 +1,6 @@
 import { useConditional } from '../index'
 import { act, renderHook } from '@testing-library/react-hooks'
-import { ConditionalApi, ICondition, IConditional } from '../types'
+import { ConditionalApi, ConditionalWhen, Conditional } from '../types'
 
 describe('useConditional', () => {
   enum Action {
@@ -8,7 +8,7 @@ describe('useConditional', () => {
     Action2,
   }
 
-  let defineConditional: (conditional: IConditional<Action>) => void, conditionalApi: ConditionalApi<Action>
+  let defineConditional: (conditional: Conditional<Action>) => void, conditionalApi: ConditionalApi<Action>
 
   beforeEach(() => {
     const { result } = renderHook(() => useConditional<Action>())
@@ -18,7 +18,7 @@ describe('useConditional', () => {
 
   it('should call `perform` callback when the condition is fulfilled', () => {
     const mockCallback = jest.fn()
-    const condition: ICondition<Action> = {
+    const condition: ConditionalWhen<Action> = {
       done: [Action.Action1, Action.Action2],
     }
 
@@ -38,7 +38,7 @@ describe('useConditional', () => {
   it('should call teardown function after the condition is not valid once it is valid.', () => {
     const mockTeardownCallback = jest.fn()
     const mockCallback = jest.fn(() => mockTeardownCallback)
-    const condition: ICondition<Action> = {
+    const condition: ConditionalWhen<Action> = {
       done: [Action.Action1, Action.Action2],
     }
 
@@ -121,7 +121,7 @@ describe('useConditional', () => {
 
   test('setActions', () => {
     const mockCallback = jest.fn()
-    const condition: ICondition<Action> = {
+    const condition: ConditionalWhen<Action> = {
       done: [Action.Action1, Action.Action2],
     }
 

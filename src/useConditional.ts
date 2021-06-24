@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ConditionalApi, ICondition, IConditional, TeardownType } from './types'
+import { ConditionalApi, ConditionalWhen, Conditional, ConditionalTeardownFn } from './types'
 import { compareArrays } from './utils'
 
 export const useConditional = <ActionType>(): [
-  (conditional: IConditional<ActionType>) => void,
+  (conditional: Conditional<ActionType>) => void,
   ConditionalApi<ActionType>
 ] => {
   type ApiType = ConditionalApi<ActionType>
-  type ConditionalType = IConditional<ActionType>
+  type ConditionalType = Conditional<ActionType>
   type ConditionalWithTeardownType = ConditionalType & {
     performed: boolean
-    teardown?: TeardownType | void
+    teardown?: ConditionalTeardownFn | void
   }
-  type ConditionType = ICondition<ActionType>
+  type ConditionType = ConditionalWhen<ActionType>
 
   const [performedActions, setPerformedActions] = useState<Set<ActionType>>(new Set())
   const [conditionals, setConditionals] = useState<ConditionalWithTeardownType[]>([])

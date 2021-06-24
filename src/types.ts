@@ -1,4 +1,4 @@
-export type ICondition<ActionType> =
+export type ConditionalWhen<ActionType> =
   | {
       done: ActionType[]
       undone?: ActionType[]
@@ -8,12 +8,12 @@ export type ICondition<ActionType> =
       undone: ActionType[]
     }
   | null
-export type TeardownType = () => void
+export type ConditionalTeardownFn = () => void
 
-export interface IConditional<ActionType> {
+export interface Conditional<ActionType> {
   name?: string
-  when: ICondition<ActionType>
-  perform: () => TeardownType | void
+  when: ConditionalWhen<ActionType>
+  perform: () => ConditionalTeardownFn | void
 }
 
 export interface ConditionalApi<ActionType> {
@@ -22,6 +22,6 @@ export interface ConditionalApi<ActionType> {
   setActions: (actions: ActionType[]) => void
   clearActions: () => void
   isActionsDone: (actions: ActionType[]) => boolean
-  checkCondition: (when: ICondition<ActionType>) => boolean
-  updateCondition: (name: string, when: ICondition<ActionType>) => void
+  checkCondition: (when: ConditionalWhen<ActionType>) => boolean
+  updateCondition: (name: string, when: ConditionalWhen<ActionType>) => void
 }
