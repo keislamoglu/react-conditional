@@ -9,11 +9,12 @@ export type ConditionalWhen<ActionType> =
     }
   | null
 export type ConditionalTeardownFn = () => void
+export type ConditionalHandlerFn = () => ConditionalTeardownFn | void
 
 export interface Conditional<ActionType> {
   name?: string
   when: ConditionalWhen<ActionType>
-  perform: () => ConditionalTeardownFn | void
+  perform: ConditionalHandlerFn
 }
 
 export interface ConditionalApi<ActionType> {
@@ -21,7 +22,6 @@ export interface ConditionalApi<ActionType> {
   undoAction: (action: ActionType) => void
   setActions: (actions: ActionType[]) => void
   clearActions: () => void
-  isActionsDone: (actions: ActionType[]) => boolean
+  validateActions: (actions: ActionType[]) => boolean
   checkCondition: (when: ConditionalWhen<ActionType>) => boolean
-  updateCondition: (name: string, when: ConditionalWhen<ActionType>) => void
 }

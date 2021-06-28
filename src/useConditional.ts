@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConditionalApi, ConditionalWhen, Conditional, ConditionalTeardownFn } from './types'
 import { compareArrays } from './utils'
 
@@ -15,7 +15,7 @@ export const useConditional = <ActionType>(): [
   type ConditionType = ConditionalWhen<ActionType>
 
   const [performedActions, setPerformedActions] = useState<Set<ActionType>>(new Set())
-  const [conditionals, setConditionals] = useState<ConditionalWithTeardownType[]>([])
+  const conditionals = useRef<ConditionalWithTeardownType[]>([])
 
   const compareConditions = useCallback((cond1: Exclude<ConditionType, null>, cond2: Exclude<ConditionType, null>) => {
     const props: Array<keyof typeof cond1> = ['done', 'undone']
@@ -75,7 +75,7 @@ export const useConditional = <ActionType>(): [
     })
   }, [updateActionSet])
 
-  const isActionsDone: ApiType['isActionsDone'] = useCallback(
+  const validateActions: ApiType['validateActions'] = useCallback(
     (actions: ActionType[]) => {
       return actions.every((action) => performedActions.has(action))
     },
@@ -87,88 +87,97 @@ export const useConditional = <ActionType>(): [
       return (
         when === null ||
         [
-          when.done ? isActionsDone(when.done) : true,
-          when.undone ? !when.undone.some((action) => isActionsDone([action])) : true,
+          when.done ? validateActions(when.done) : true,
+          when.undone ? !when.undone.some((action) => validateActions([action])) : true,
         ].every(Boolean)
       )
     },
-    [isActionsDone]
+    [validateActions]
   )
 
-  const detectChanges = useCallback(() => {
-    conditionals.forEach((conditional) => {
+  const shouldConditionalPerform = useCallback(
+    (conditional: ConditionalWithTeardownType) => {
       const isConditionFulfilled = checkCondition(conditional.when)
 
       if (isConditionFulfilled) {
-        conditional.teardown = conditional.perform()
-        conditional.performed = true
+        if (!conditional.performed) {
+          conditional.teardown = conditional.perform()
+          conditional.performed = true
+        }
       } else if (conditional.performed) {
         conditional.performed = false
         if (conditional.teardown) conditional.teardown()
       }
-    })
-  }, [checkCondition, conditionals])
+    },
+    [checkCondition]
+  )
+
+  const shouldConditionalsPerform = useCallback(() => {
+    conditionals.current.forEach(shouldConditionalPerform)
+  }, [shouldConditionalPerform])
 
   const updateCondition = useCallback(
     (name: string, when: ConditionType) => {
-      setConditionals((conditionals) => {
-        const conditional = conditionals.find(({ name: _name }) => name === _name)
+      const conditional = conditionals.current.find(({ name: _name }) => name === _name)
 
-        if (conditional) {
-          const hasNullDifference = [conditional.when, when].includes(null) && conditional.when !== when
-          const hasNonNullDifference =
-            conditional.when != null && when != null && !compareConditions(conditional.when, when)
+      if (conditional) {
+        const hasNullDifference = [conditional.when, when].includes(null) && conditional.when !== when
+        const hasNonNullDifference =
+          conditional.when != null && when != null && !compareConditions(conditional.when, when)
 
-          if (hasNullDifference || hasNonNullDifference) {
-            conditional.when = when
-            detectChanges()
-          }
+        if (hasNullDifference || hasNonNullDifference) {
+          conditional.when = when
+          shouldConditionalPerform(conditional)
         }
-
-        return conditionals
-      })
+      }
     },
-    [compareConditions, detectChanges]
+    [shouldConditionalPerform, compareConditions]
   )
 
   const defineConditional = useCallback(
     (conditional: ConditionalType) => {
-      setConditionals((conditionals) => {
-        let existingConditional: ConditionalWithTeardownType | undefined
+      let existingConditional: ConditionalWithTeardownType | undefined
 
-        if (conditional.name) {
-          existingConditional = conditionals.find(({ name }) => conditional.name === name)
-          existingConditional != null && updateCondition(conditional.name, conditional.when)
-        }
+      if (conditional.name) {
+        existingConditional = conditionals.current.find(({ name }) => conditional.name === name)
+        existingConditional != null && updateCondition(conditional.name, conditional.when)
+      }
 
-        if (!existingConditional && conditional.when != null) {
-          existingConditional = conditionals.find(
+      if (!existingConditional && conditional.when != null) {
+        existingConditional = conditionals.current.find(
+          ({ name, when }) =>
+            !name &&
+            when != null &&
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            ({ name, when }) => !name && when != null && compareConditions(when, conditional.when!)
-          )
-        }
+            compareConditions(when, conditional.when!)
+        )
+      }
 
-        if (existingConditional) {
+      if (existingConditional) {
+        if (conditional.perform !== existingConditional.perform) {
+          if (existingConditional.performed) {
+            existingConditional.teardown && existingConditional.teardown()
+            existingConditional.performed = false
+          }
+
           existingConditional.perform = conditional.perform
-          existingConditional.performed = false
-        } else {
-          conditionals.push({
-            ...conditional,
-            performed: false,
-          })
+          shouldConditionalPerform(existingConditional)
         }
-
-        detectChanges()
-
-        return conditionals
-      })
+      } else {
+        const conditionalWithTeardown = {
+          ...conditional,
+          performed: false,
+        }
+        conditionals.current.push(conditionalWithTeardown)
+        shouldConditionalPerform(conditionalWithTeardown)
+      }
     },
-    [detectChanges, compareConditions, updateCondition]
+    [shouldConditionalPerform, compareConditions, updateCondition]
   )
 
   useEffect(() => {
-    detectChanges()
-  }, [detectChanges])
+    shouldConditionalsPerform()
+  }, [shouldConditionalsPerform])
 
   return [
     defineConditional,
@@ -177,9 +186,8 @@ export const useConditional = <ActionType>(): [
       undoAction,
       setActions,
       clearActions,
-      isActionsDone,
+      validateActions,
       checkCondition,
-      updateCondition,
     },
   ]
 }
