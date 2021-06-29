@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { ConditionalApi, ConditionalWhen, Conditional, ConditionalTeardownFn } from './types'
 import { compareArrays } from './utils'
 
@@ -14,7 +14,7 @@ export const useConditional = <ActionType>(): [
   }
   type ConditionType = ConditionalWhen<ActionType>
 
-  const [performedActions, setPerformedActions] = useState<Set<ActionType>>(new Set())
+  const performedActions = useRef<Set<ActionType>>(new Set())
   const conditionals = useRef<ConditionalWithTeardownType[]>([])
 
   const compareConditions = useCallback((cond1: Exclude<ConditionType, null>, cond2: Exclude<ConditionType, null>) => {
@@ -33,9 +33,51 @@ export const useConditional = <ActionType>(): [
     })
   }, [])
 
-  const updateActionSet = useCallback((setterCallback: (set: Set<ActionType>) => Set<ActionType>) => {
-    setPerformedActions((prevPerformedActions: Set<ActionType>) => setterCallback(new Set(prevPerformedActions)))
+  const validateActions: ApiType['validateActions'] = useCallback((actions: ActionType[]) => {
+    return actions.every((action) => performedActions.current.has(action))
   }, [])
+
+  const checkCondition = useCallback(
+    (when: ConditionType) => {
+      return (
+        when === null ||
+        [
+          when.done ? validateActions(when.done) : true,
+          when.undone ? !when.undone.some((action) => validateActions([action])) : true,
+        ].every(Boolean)
+      )
+    },
+    [validateActions]
+  )
+
+  const shouldConditionalPerform = useCallback(
+    (conditional: ConditionalWithTeardownType) => {
+      const isConditionFulfilled = checkCondition(conditional.when)
+
+      if (isConditionFulfilled) {
+        if (!conditional.performed) {
+          conditional.teardown = conditional.perform()
+          conditional.performed = true
+        }
+      } else if (conditional.performed) {
+        conditional.performed = false
+        if (conditional.teardown) conditional.teardown()
+      }
+    },
+    [checkCondition]
+  )
+
+  const shouldConditionalsPerform = useCallback(() => {
+    conditionals.current.forEach(shouldConditionalPerform)
+  }, [shouldConditionalPerform])
+
+  const updateActionSet = useCallback(
+    (setterCallback: (set: Set<ActionType>) => Set<ActionType>) => {
+      performedActions.current = setterCallback(new Set(performedActions.current))
+      shouldConditionalsPerform()
+    },
+    [shouldConditionalsPerform]
+  )
 
   const doAction: ApiType['doAction'] = useCallback(
     (action: ActionType) => {
@@ -74,47 +116,6 @@ export const useConditional = <ActionType>(): [
       return actionSet
     })
   }, [updateActionSet])
-
-  const validateActions: ApiType['validateActions'] = useCallback(
-    (actions: ActionType[]) => {
-      return actions.every((action) => performedActions.has(action))
-    },
-    [performedActions]
-  )
-
-  const checkCondition = useCallback(
-    (when: ConditionType) => {
-      return (
-        when === null ||
-        [
-          when.done ? validateActions(when.done) : true,
-          when.undone ? !when.undone.some((action) => validateActions([action])) : true,
-        ].every(Boolean)
-      )
-    },
-    [validateActions]
-  )
-
-  const shouldConditionalPerform = useCallback(
-    (conditional: ConditionalWithTeardownType) => {
-      const isConditionFulfilled = checkCondition(conditional.when)
-
-      if (isConditionFulfilled) {
-        if (!conditional.performed) {
-          conditional.teardown = conditional.perform()
-          conditional.performed = true
-        }
-      } else if (conditional.performed) {
-        conditional.performed = false
-        if (conditional.teardown) conditional.teardown()
-      }
-    },
-    [checkCondition]
-  )
-
-  const shouldConditionalsPerform = useCallback(() => {
-    conditionals.current.forEach(shouldConditionalPerform)
-  }, [shouldConditionalPerform])
 
   const updateCondition = useCallback(
     (name: string, when: ConditionType) => {
