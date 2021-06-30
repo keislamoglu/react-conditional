@@ -2,7 +2,18 @@
 
 Reduce the complexity of conditional rendering.
 
+## Install
+`npm install @keislamoglu/react-conditional`
+
+or
+
+`yarn add @keislamoglu/react-conditional`
+
+## Usage
+
 ```jsx
+import { useCondition, useConditional } from '@keislamoglu/react-conditional'
+
 const teardownFn = useCallback(() => {
   // ...
 }, [])
@@ -10,7 +21,7 @@ const teardownFn = useCallback(() => {
 const handleCondition = useCallback(() => {
   // ...
   return teardownFn
-})
+}, [teardownFn])
 
 const conditional = useConditional([
   useCondition(
