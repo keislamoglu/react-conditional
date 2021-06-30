@@ -2,26 +2,25 @@
 
 Reduce the complexity of conditional rendering.
 
-
 ```jsx
-const [define, cond] = useConditional();
+const teardownFn = useCallback(() => {
+  // ...
+}, [])
 
-useEffect(() => {
-    define({
-        when: {
-            done: ['action1'],
-            undone: ['action2']
-        },
-        perform: () => {
-            handleCondition();
-            
-            return () => teardownFn();
-        }
-    })
-}, []);
+const handleCondition = useCallback(() => {
+  // ...
+  return teardownFn
+})
 
-cond.doAction('action1'); // `handleCondition` will be executed
-cond.doAction('action2'); // `teardownFn` will be executed
+const conditional = useConditional([
+  useCondition(
+    { done: ['action1'], undone: ['action2'] },
+    handleCondition
+  )
+])
+
+conditional.doAction('action1'); // `handleCondition` will be executed
+conditional.doAction('action2'); // `teardownFn` will be executed
 ```
 
 ## Example
