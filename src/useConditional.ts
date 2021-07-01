@@ -1,4 +1,4 @@
-import { Condition, Conditional } from './types'
+import { Condition, Conditional, When } from './types'
 import { useCallback, useEffect, useRef } from 'react'
 
 export const useConditional = <T>(conditions: Condition<T>[]): Conditional<T> => {
@@ -42,6 +42,15 @@ export const useConditional = <T>(conditions: Condition<T>[]): Conditional<T> =>
     [verifyAndPerformConditions]
   )
 
+  const verifyCondition = useCallback((when: When<T>) => {
+    return when != null
+      ? [
+          when.done?.every((actionShouldDone) => actions.current.has(actionShouldDone)),
+          !when.undone?.some((actionShouldUndone) => actions.current.has(actionShouldUndone)),
+        ].every(Boolean)
+      : true
+  }, [])
+
   useEffect(() => {
     verifyAndPerformConditions()
   }, [verifyAndPerformConditions])
@@ -51,5 +60,6 @@ export const useConditional = <T>(conditions: Condition<T>[]): Conditional<T> =>
     undoAction,
     clearActions,
     setActions,
+    verifyCondition,
   }
 }

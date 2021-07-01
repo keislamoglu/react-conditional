@@ -3,6 +3,7 @@ export type Conditional<T> = {
   undoAction: (action: T) => void
   clearActions: () => void
   setActions: (actions: T[]) => void
+  verifyCondition: (when: When<T>) => boolean
 }
 export type When<ActionType> =
   | {
