@@ -8,12 +8,13 @@ export const useCondition = <T = string>(when: When<T>, handler: HandlerFn): Con
 
   const verify = useCallback(
     (actions: T[]) => {
-      return when != null
-        ? [
-            !when.done || when.done.every((actionShouldDone) => actions.includes(actionShouldDone)),
-            !when.undone || !when.undone.some((actionShouldUndone) => actions.includes(actionShouldUndone)),
-          ].every(Boolean)
-        : true
+      return (
+        when == null ||
+        [
+          !when.done || when.done.every((actionShouldDone) => actions.includes(actionShouldDone)),
+          !when.undone || !when.undone.some((actionShouldUndone) => actions.includes(actionShouldUndone)),
+        ].every(Boolean)
+      )
     },
     [when]
   )

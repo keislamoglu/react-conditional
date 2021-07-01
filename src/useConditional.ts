@@ -1,55 +1,74 @@
 import { Condition, Conditional, When } from './types'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export const useConditional = <T>(conditions: Condition<T>[]): Conditional<T> => {
-  const actions = useRef<Set<T>>(new Set())
+  const [actions, _setActions] = useState<Set<T>>(new Set())
 
   const verifyAndPerformConditions = useCallback(() => {
-    const _actions = Array.from(actions.current)
+    const _actions = Array.from(actions)
 
     conditions.forEach((condition) => {
       condition.verifyAndPerform(_actions)
     })
-  }, [conditions])
+  }, [actions, conditions])
 
-  const doAction = useCallback(
-    (action: T) => {
-      actions.current.add(action)
-      verifyAndPerformConditions()
-    },
-    [verifyAndPerformConditions]
-  )
+  const doAction = useCallback((action: T) => {
+    _setActions((actions) => {
+      if (actions.has(action)) {
+        return actions
+      }
 
-  const undoAction = useCallback(
-    (action: T) => {
-      actions.current.delete(action)
-      verifyAndPerformConditions()
-    },
-    [verifyAndPerformConditions]
-  )
+      actions.add(action)
+      return new Set(actions)
+    })
+  }, [])
+
+  const undoAction = useCallback((action: T) => {
+    _setActions((actions) => {
+      if (!actions.has(action)) {
+        return actions
+      }
+
+      actions.delete(action)
+      return new Set(actions)
+    })
+  }, [])
 
   const clearActions = useCallback(() => {
-    actions.current.clear()
-    verifyAndPerformConditions()
-  }, [verifyAndPerformConditions])
+    _setActions((actions) => {
+      if (actions.size === 0) {
+        return actions
+      }
 
-  const setActions = useCallback(
-    (_actions: T[]) => {
-      actions.current.clear()
-      _actions.forEach((action) => actions.current.add(action))
-      verifyAndPerformConditions()
-    },
-    [verifyAndPerformConditions]
-  )
-
-  const verifyCondition = useCallback((when: When<T>) => {
-    return when != null
-      ? [
-          !when.done || when.done.every((actionShouldDone) => actions.current.has(actionShouldDone)),
-          !when.undone || !when.undone.some((actionShouldUndone) => actions.current.has(actionShouldUndone)),
-        ].every(Boolean)
-      : true
+      actions.clear()
+      return new Set(actions)
+    })
   }, [])
+
+  const setActions = useCallback((_actions: T[]) => {
+    _setActions((actions) => {
+      if (_actions.length === actions.size && _actions.every((action) => actions.has(action))) {
+        return actions
+      }
+
+      actions.clear()
+      _actions.forEach((action) => actions.add(action))
+      return new Set(actions)
+    })
+  }, [])
+
+  const verifyCondition = useCallback(
+    (when: When<T>) => {
+      return (
+        when == null ||
+        [
+          !when.done || when.done.every((actionShouldDone) => actions.has(actionShouldDone)),
+          !when.undone || !when.undone.some((actionShouldUndone) => actions.has(actionShouldUndone)),
+        ].every(Boolean)
+      )
+    },
+    [actions]
+  )
 
   useEffect(() => {
     verifyAndPerformConditions()
