@@ -45,8 +45,8 @@ export const useConditional = <T>(conditions: Condition<T>[]): Conditional<T> =>
   const verifyCondition = useCallback((when: When<T>) => {
     return when != null
       ? [
-          when.done?.every((actionShouldDone) => actions.current.has(actionShouldDone)),
-          !when.undone?.some((actionShouldUndone) => actions.current.has(actionShouldUndone)),
+          !when.done || when.done.every((actionShouldDone) => actions.current.has(actionShouldDone)),
+          !when.undone || !when.undone.some((actionShouldUndone) => actions.current.has(actionShouldUndone)),
         ].every(Boolean)
       : true
   }, [])

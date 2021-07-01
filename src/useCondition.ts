@@ -10,8 +10,8 @@ export const useCondition = <T = string>(when: When<T>, handler: HandlerFn): Con
     (actions: T[]) => {
       return when != null
         ? [
-            when.done?.every((actionShouldDone) => actions.includes(actionShouldDone)),
-            !when.undone?.some((actionShouldUndone) => actions.includes(actionShouldUndone)),
+            !when.done || when.done.every((actionShouldDone) => actions.includes(actionShouldDone)),
+            !when.undone || !when.undone.some((actionShouldUndone) => actions.includes(actionShouldUndone)),
           ].every(Boolean)
         : true
     },
