@@ -3,11 +3,16 @@
 Reduce the complexity of conditional rendering.
 
 ## Install
-`npm install @keislamoglu/react-conditional`
+Either `npm` or `yarn` can be used to install the dependency: 
+```
+npm install @keislamoglu/react-conditional
+```
 
 or
 
-`yarn add @keislamoglu/react-conditional`
+```
+yarn add @keislamoglu/react-conditional
+```
 
 ## Usage
 
